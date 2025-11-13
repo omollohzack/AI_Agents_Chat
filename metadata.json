@@ -1,5 +1,7 @@
 {
   "name": "AI Messaging Simulator",
   "description": "An application that simulates a messaging app, allowing you to have conversations with an AI. You can adjust the AI's personality to change its reply style.",
-  "requestFramePermissions": []
+  "requestFramePermissions": [
+    "microphone"
+  ]
 }

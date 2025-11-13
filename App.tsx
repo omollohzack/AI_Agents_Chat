@@ -6,6 +6,7 @@ import { generateReply } from './services/geminiService';
 import ContactList from './components/ContactList';
 import ChatWindow from './components/ChatWindow';
 import SettingsPanel from './components/SettingsPanel';
+import { useSpeechSynthesis } from './hooks/useSpeechSynthesis';
 import { Menu, X } from 'lucide-react';
 
 const App: React.FC = () => {
@@ -14,6 +15,7 @@ const App: React.FC = () => {
   const [messages, setMessages] = useState<Record<string, Message[]>>({});
   const [isTyping, setIsTyping] = useState(false);
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
+  const { nowPlayingId, playAudio, stopAudio } = useSpeechSynthesis();
 
   useEffect(() => {
     // Select the first contact by default on load
@@ -24,6 +26,7 @@ const App: React.FC = () => {
 
   const handleSelectContact = (contact: Contact) => {
     setActiveContact(contact);
+    stopAudio(); // Stop any playing audio when switching chats
     if (window.innerWidth < 768) { // md breakpoint in Tailwind
       setIsSidebarOpen(false);
     }
@@ -31,6 +34,7 @@ const App: React.FC = () => {
 
   const handleSendMessage = useCallback(async (text: string) => {
     if (!activeContact) return;
+    stopAudio(); // Stop any currently playing message before sending a new one
 
     const userMessage: Message = {
       id: Date.now().toString(),
@@ -62,6 +66,8 @@ const App: React.FC = () => {
         ...prev,
         [activeContact.id]: [...(prev[activeContact.id] || []), aiMessage],
       }));
+      
+      playAudio(aiMessage); // Automatically play the new AI message
 
     } catch (error) {
       console.error("Failed to get AI reply:", error);
@@ -76,16 +82,25 @@ const App: React.FC = () => {
         ...prev,
         [activeContact.id]: [...(prev[activeContact.id] || []), errorMessage],
       }));
+      playAudio(errorMessage);
     } finally {
       setIsTyping(false);
     }
-  }, [activeContact, messages]);
+  }, [activeContact, messages, playAudio, stopAudio]);
 
   const handleUpdateContact = (updatedContact: Contact) => {
     const newContacts = contacts.map(c => c.id === updatedContact.id ? updatedContact : c);
     setContacts(newContacts);
     if (activeContact?.id === updatedContact.id) {
       setActiveContact(updatedContact);
+    }
+  };
+
+  const handlePlayMessage = (message: Message) => {
+    if (nowPlayingId === message.id) {
+      stopAudio();
+    } else {
+      playAudio(message);
     }
   };
 
@@ -132,6 +147,8 @@ const App: React.FC = () => {
                 messages={messages[activeContact.id] || []}
                 onSendMessage={handleSendMessage}
                 isTyping={isTyping}
+                nowPlayingId={nowPlayingId}
+                onPlayMessage={handlePlayMessage}
               />
             ) : (
               <div className="flex-1 flex items-center justify-center text-gray-500 dark:text-gray-400">

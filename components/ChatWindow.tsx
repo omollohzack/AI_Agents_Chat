@@ -11,13 +11,19 @@ interface ChatWindowProps {
   messages: Message[];
   onSendMessage: (text: string) => void;
   isTyping: boolean;
+  nowPlayingId: string | null;
+  onPlayMessage: (message: Message) => void;
 }
 
-const ChatWindow: React.FC<ChatWindowProps> = ({ contact, messages, onSendMessage, isTyping }) => {
+const ChatWindow: React.FC<ChatWindowProps> = ({ contact, messages, onSendMessage, isTyping, nowPlayingId, onPlayMessage }) => {
   return (
     <div className="flex flex-col h-full bg-gray-50 dark:bg-gray-900">
       <ChatHeader contact={contact} />
-      <MessageList messages={messages} />
+      <MessageList 
+        messages={messages}
+        nowPlayingId={nowPlayingId}
+        onPlayMessage={onPlayMessage}
+      />
       {isTyping && <TypingIndicator avatarUrl={contact.avatarUrl} />}
       <ChatInput onSendMessage={onSendMessage} />
     </div>
